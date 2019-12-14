@@ -316,7 +316,7 @@ export function handleSetupResult(
           `return a render function instead.`
       )
     }
-    // setup returned bindings.
+    // setup returned bindings. 这里的rendercontext应该是模板解析后的包含指令等的数据绑定对象, 提前从模板中分析好的v-bind等
     // assuming a render function compiled from template is present.
     instance.renderContext = reactive(setupResult)
   } else if (__DEV__ && setupResult !== undefined) {
@@ -345,8 +345,8 @@ function finishComponentSetup(
   parentSuspense: SuspenseBoundary | null
 ) {
   const Component = instance.type as ComponentOptions
-  if (!instance.render) {
-    if (__RUNTIME_COMPILE__ && Component.template && !Component.render) {
+  if (!instance.render) { // 绑定render函数, 就是对应模板生成的快捷函数h
+    if (__RUNTIME_COMPILE__ && Component.template && !Component.render) { // 运行时有模板的编译
       // __RUNTIME_COMPILE__ ensures `compile` is provided
       Component.render = compile!(Component.template, {
         isCustomElement: instance.appContext.config.isCustomElement || NO,
