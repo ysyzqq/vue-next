@@ -29,6 +29,7 @@ import {
 } from './errorHandling'
 import { onBeforeUnmount } from './apiLifecycle'
 import { queuePostRenderEffect } from './renderer'
+import { warn } from './warning'
 
 export type WatchHandler<T = any> = (
   value: T,
@@ -197,14 +198,20 @@ function doWatch(
     scheduler: applyCb ? () => scheduler(applyCb) : scheduler // 如果没有watch的回调,那么每次scheduler默认传入的是当前的effect, (effect(), 即get依赖收集操作)
   })
 
-  if (!lazy) {
+  if (lazy && cb) {
+    oldValue = runner()
+  } else {
+    if (__DEV__ && lazy && !cb) {
+      warn(
+        `watch() lazy option is only respected when using the ` +
+          `watch(getter, callback) signature.`
+      )
+    }
     if (applyCb) {
       scheduler(applyCb)
     } else {
       scheduler(runner)
     }
-  } else {
-    oldValue = runner()
   }
 
   recordEffect(runner)

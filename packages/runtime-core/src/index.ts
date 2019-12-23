@@ -6,7 +6,7 @@ export * from './apiWatch'
 export * from './apiLifecycle'
 export * from './apiInject'
 export { nextTick } from './scheduler'
-export { createComponent } from './apiCreateComponent'
+export { defineComponent } from './apiDefineComponent'
 
 // Advanced API ----------------------------------------------------------------
 
@@ -51,6 +51,9 @@ export const PatchFlags = PublicPatchFlags as {
   BAIL: number
 }
 
+// SFC CSS Modules
+export { useCSSModule } from './helpers/useCssModule'
+
 // For custom renderers
 export { createRenderer, RootRenderFunction } from './renderer'
 export { warn } from './warning'
@@ -82,6 +85,7 @@ export { toString } from './helpers/toString'
 export { toHandlers } from './helpers/toHandlers'
 export { renderSlot } from './helpers/renderSlot'
 export { createSlots } from './helpers/createSlots'
+export { pushScopeId, popScopeId, withScopeId } from './helpers/scopeId'
 export { setBlockTracking, createTextVNode, createCommentVNode } from './vnode'
 // Since @vue/shared is inlined into final builds,
 // when re-exporting from @vue/shared we need to avoid relying on their original
@@ -95,7 +99,7 @@ export { registerRuntimeCompiler } from './component'
 
 // Types -----------------------------------------------------------------------
 
-export { App, AppConfig, AppContext, Plugin } from './apiApp'
+export { App, AppConfig, AppContext, Plugin } from './apiCreateApp'
 export { VNode, VNodeTypes, VNodeProps } from './vnode'
 export {
   Component,
@@ -129,3 +133,4 @@ export {
   DirectiveArguments
 } from './directives'
 export { SuspenseBoundary } from './components/Suspense'
+export { HMRRuntime } from './hmr'

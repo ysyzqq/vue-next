@@ -3,7 +3,8 @@ import {
   Data,
   Component,
   SetupContext,
-  RenderFunction
+  RenderFunction,
+  SFCInternalOptions
 } from './component'
 import {
   isFunction,
@@ -49,7 +50,7 @@ export interface ComponentOptionsBase<
   D,
   C extends ComputedOptions,
   M extends MethodOptions
-> extends LegacyOptions<Props, RawBindings, D, C, M> {
+> extends LegacyOptions<Props, RawBindings, D, C, M>, SFCInternalOptions {
   setup?: (
     this: null,
     props: Props,
@@ -67,14 +68,9 @@ export interface ComponentOptionsBase<
   directives?: Record<string, Directive>
   inheritAttrs?: boolean
 
-  // SFC & dev only
-  __scopeId?: string
-  __hmrId?: string
-  __hmrUpdated?: boolean
-
   // type-only differentiator to separate OptionWithoutProps from a constructor
-  // type returned by createComponent() or FunctionalComponent
   // 函数组件和createComponent返回的构造函数类型
+  // type returned by defineComponent() or FunctionalComponent
   call?: never
   // type-only differentiators for built-in Vnode types
   __isFragment?: never

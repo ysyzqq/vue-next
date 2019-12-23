@@ -13,7 +13,7 @@ import {
   callWithErrorHandling,
   callWithAsyncErrorHandling
 } from './errorHandling'
-import { AppContext, createAppContext, AppConfig } from './apiApp'
+import { AppContext, createAppContext, AppConfig } from './apiCreateApp'
 import { Directive, validateDirectiveName } from './directives'
 import { applyOptions, ComponentOptions } from './apiOptions'
 import {
@@ -32,26 +32,18 @@ import { currentRenderingInstance } from './componentRenderUtils'
 
 export type Data = { [key: string]: unknown }
 
-/**
- * vue的函数组件
- * 传入props, setup-context, 返回vnode
- * 自身属性:
- *    props: 组件的props配置,和vue2一致
- *    inheritAttrs: 是否继承原始的attrs
- *    displayName: 组件的名字
- * 内部使用的hmr标记
- *    __hmrId
- *    __hmrUpdated
- */
-export interface FunctionalComponent<P = {}> {
+export interface SFCInternalOptions {
+  __scopeId?: string
+  __cssModules?: Data
+  __hmrId?: string
+  __hmrUpdated?: boolean
+}
+
+export interface FunctionalComponent<P = {}> extends SFCInternalOptions {
   (props: P, ctx: SetupContext): VNodeChild
   props?: ComponentPropsOptions<P>
   inheritAttrs?: boolean
   displayName?: string
-
-  // internal HMR related flags
-  __hmrId?: string
-  __hmrUpdated?: boolean
 }
 
 export type Component = ComponentOptions | FunctionalComponent
@@ -158,8 +150,7 @@ export interface ComponentInternalInstance {
 
 const emptyAppContext = createAppContext()
 
-// 生成组件实例
-export function createComponentInstance(
+export function defineComponentInstance(
   vnode: VNode,
   parent: ComponentInternalInstance | null
 ) {
@@ -392,6 +383,8 @@ function finishComponentSetup(
       Component.render = compile!(Component.template, {
         isCustomElement: instance.appContext.config.isCustomElement || NO
       })
+      // mark the function as runtime compiled
+      ;(Component.render as RenderFunction).isRuntimeCompiled = true
     }
 
     if (__DEV__ && !Component.render) {

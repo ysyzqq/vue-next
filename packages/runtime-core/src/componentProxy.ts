@@ -105,40 +105,49 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
      * 访问缓存, 为了避免多次hasown的调用(很耗性能), 将key分三种类型映射, 然后直接从对应的data, renderContext, propsProxy上取
      * 这里优先处理调用频率比较高的
      */
-    const n = accessCache![key]
-    if (n !== undefined) {
-      switch (n) {
-        case AccessTypes.DATA:
-          return data[key]
-        case AccessTypes.CONTEXT:
-          return renderContext[key]
-        case AccessTypes.PROPS:
-          return propsProxy![key]
+    if (key[0] !== '$') {
+      const n = accessCache![key]
+      if (n !== undefined) {
+        switch (n) {
+          case AccessTypes.DATA:
+            return data[key]
+          case AccessTypes.CONTEXT:
+            return renderContext[key]
+          case AccessTypes.PROPS:
+            return propsProxy![key]
+        }
+      } else if (data !== EMPTY_OBJ && hasOwn(data, key)) {
+        accessCache![key] = AccessTypes.DATA
+        return data[key]
+      } else if (hasOwn(renderContext, key)) {
+        accessCache![key] = AccessTypes.CONTEXT
+        return renderContext[key]
+      } else if (hasOwn(props, key)) {
+        // only cache props access if component has declared (thus stable) props
+        // 浅对比, 只缓存组件声明的props
+        if (type.props != null) {
+          accessCache![key] = AccessTypes.PROPS
+        }
+        // return the value from propsProxy for ref unwrapping and readonly
+        return propsProxy![key]
       }
-    } else if (data !== EMPTY_OBJ && hasOwn(data, key)) {
-      accessCache![key] = AccessTypes.DATA
-      return data[key]
-    } else if (hasOwn(renderContext, key)) {
-      accessCache![key] = AccessTypes.CONTEXT
-      return renderContext[key]
-    } else if (hasOwn(props, key)) {
-      // only cache props access if component has declared (thus stable) props
-      // 浅对比, 只缓存组件声明的props
-      if (type.props != null) {
-        accessCache![key] = AccessTypes.PROPS
-      }
-      // return the value from propsProxy for ref unwrapping and readonly
-      return propsProxy![key]
     }
 
     // public $xxx properties & user-attached properties (sink)
     // 处理以$开头的属性,也通过map去取对应的值(包括用户自己定义的$开头的属性)
     const publicGetter = publicPropertiesMap[key]
-    if (publicGetter !== undefined) {
+    let cssModule
+    if (publicGetter != null) {
       if (__DEV__ && key === '$attrs') {
         markAttrsAccessed()
       }
       return publicGetter(target)
+    } else if (
+      __BUNDLER__ &&
+      (cssModule = type.__cssModules) != null &&
+      (cssModule = cssModule[key])
+    ) {
+      return cssModule
     } else if (hasOwn(sink, key)) {
       return sink[key]
     } else if (__DEV__ && currentRenderingInstance != null) {

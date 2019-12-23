@@ -15,12 +15,13 @@ import {
 import { RawSlots } from './componentSlots'
 import { ShapeFlags } from './shapeFlags'
 import { isReactive, Ref } from '@vue/reactivity'
-import { AppContext } from './apiApp'
+import { AppContext } from './apiCreateApp'
 import { SuspenseBoundary } from './components/Suspense'
 import { DirectiveBinding } from './directives'
 import { SuspenseImpl } from './components/Suspense'
 import { TransitionHooks } from './components/BaseTransition'
 import { warn } from './warning'
+import { currentScopeId } from './helpers/scopeId'
 
 export const Fragment = (Symbol(__DEV__ ? 'Fragment' : undefined) as any) as {
   __isFragment: true
@@ -91,6 +92,7 @@ export interface VNode<HostNode = any, HostElement = any> {
   props: VNodeProps | null // vnode的props, 主要是ref, key和hooks
   key: string | number | null
   ref: string | Ref | ((ref: object | null) => void) | null
+  scopeId: string | null // SFC only
   children: NormalizedChildren<HostNode, HostElement>
   component: ComponentInternalInstance | null
   suspense: SuspenseBoundary<HostNode, HostElement> | null
@@ -252,6 +254,7 @@ export function createVNode(
     props,
     key: (props !== null && props.key) || null,
     ref: (props !== null && props.ref) || null,
+    scopeId: currentScopeId,
     children: null,
     component: null,
     suspense: null,
@@ -302,6 +305,7 @@ export function cloneVNode<T, U>(
       : vnode.props,
     key: vnode.key,
     ref: vnode.ref,
+    scopeId: vnode.scopeId,
     children: vnode.children,
     target: vnode.target,
     shapeFlag: vnode.shapeFlag,
@@ -353,6 +357,11 @@ export function normalizeVNode<T, U>(child: VNodeChild<T, U>): VNode<T, U> {
     // primitive types
     return createVNode(Text, null, String(child))
   }
+}
+
+// optimized normalization for template-compiled render fns
+export function cloneIfMounted(child: VNode): VNode {
+  return child.el === null ? child : cloneVNode(child)
 }
 
 export function normalizeChildren(vnode: VNode, children: unknown) {

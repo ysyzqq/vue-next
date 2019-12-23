@@ -25,7 +25,6 @@ import {
 } from './ast'
 import { extend } from '@vue/shared'
 
-// `isNativeTag` is optional, others are required
 type OptionalOptions = 'isNativeTag' | 'isBuiltInComponent'
 type MergedParserOptions = Omit<Required<ParserOptions>, OptionalOptions> &
   Pick<ParserOptions, OptionalOptions>
@@ -67,7 +66,10 @@ interface ParserContext {
   inPre: boolean
 }
 
-export function parse(content: string, options: ParserOptions = {}): RootNode {
+export function baseParse(
+  content: string,
+  options: ParserOptions = {}
+): RootNode {
   const context = createParserContext(content, options)
   const start = getCursor(context)
 
@@ -191,7 +193,7 @@ function parseChildren(
   }
 
   // Whitespace management for more efficient output
-  // (same as v2 whitespance: 'condense')
+  // (same as v2 whitespace: 'condense')
   let removedWhitespace = false
   if (
     mode !== TextModes.RAWTEXT &&
@@ -363,7 +365,7 @@ function parseElement(
 
   // Children.
   ancestors.push(element)
-  const mode = context.options.getTextMode(element.tag, element.ns)
+  const mode = context.options.getTextMode(element.tag, element.ns, parent)
   const children = parseChildren(context, mode, ancestors)
   ancestors.pop()
 
@@ -373,7 +375,7 @@ function parseElement(
   if (startsWithEndTagOpen(context.source, element.tag)) {
     parseTag(context, TagType.End, parent)
   } else {
-    emitError(context, ErrorCodes.X_MISSING_END_TAG)
+    emitError(context, ErrorCodes.X_MISSING_END_TAG, 0, element.loc.start)
     if (context.source.length === 0 && element.tag.toLowerCase() === 'script') {
       const first = children[0]
       if (first && startsWith(first.loc.source, '<!--')) {
@@ -964,9 +966,9 @@ function getNewPosition(
 function emitError(
   context: ParserContext,
   code: ErrorCodes,
-  offset?: number
+  offset?: number,
+  loc: Position = getCursor(context)
 ): void {
-  const loc = getCursor(context)
   if (offset) {
     loc.offset += offset
     loc.column += offset
