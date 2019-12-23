@@ -4,6 +4,9 @@ import { warn } from './warning'
 
 export interface InjectionKey<T> extends Symbol {}
 
+/** 
+ * provide, inject api
+ */
 export function provide<T>(key: InjectionKey<T> | string, value: T) {
   if (!currentInstance) {
     if (__DEV__) {
@@ -11,8 +14,8 @@ export function provide<T>(key: InjectionKey<T> | string, value: T) {
     }
   } else {
     let provides = currentInstance.provides
-    // by default an instance inherits its parent's provides object
-    // but when it needs to provide values of its own, it creates its
+    // by default an instance inherits its parent's provides object 默认情况下组件实例会继承父级的provide对象
+    // but when it needs to provide values of its own, it creates its 如果要生成自己的provide对象, 会以父的做原型来生成
     // own provides object using parent provides object as prototype.
     // this way in `inject` we can simply look up injections from direct
     // parent and let the prototype chain do the work.
@@ -32,7 +35,7 @@ export function inject(
   key: InjectionKey<any> | string,
   defaultValue?: unknown
 ) {
-  // fallback to `currentRenderingInstance` so that this can be called in
+  // fallback to `currentRenderingInstance` so that this can be called in 为函数组件提供后备, 因为函数组件没有currentInstance
   // a functional component
   const instance = currentInstance || currentRenderingInstance
   if (instance) {

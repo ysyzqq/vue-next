@@ -33,7 +33,7 @@ import {
 
 import { currentInstance } from './component'
 
-// record effects created during a component's setup() so that they can be
+// record effects created during a component's setup() so that they can be 副作用记录在组件实例的cur.effects对象上, 在setup()中生成
 // stopped when the component unmounts
 export function recordEffect(effect: ReactiveEffect) {
   if (currentInstance) {

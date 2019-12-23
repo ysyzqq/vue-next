@@ -11,12 +11,13 @@ import { ExtractPropTypes, ComponentPropsOptions } from './componentProps'
 import { isFunction } from '@vue/shared'
 import { VNodeProps } from './vnode'
 
+// 用来做组件类型推论的一些override函数定义
 // createComponent is a utility that is primarily used for type inference
 // when declaring components. Type inference is provided in the component
 // options (provided as the argument). The returned value has artifical types
 // for TSX / manual render function / IDE support.
 
-// overload 1: direct setup function
+// overload 1: direct setup function 直接启动函数, 使用用户自定义的props
 // (uses user defined props interface)
 export function createComponent<Props, RawBindings = object>(
   setup: (
@@ -36,8 +37,8 @@ export function createComponent<Props, RawBindings = object>(
 }
 
 // overload 2: object format with no props
-// (uses user defined props interface)
-// return type is for Vetur and TSX support
+// (uses user defined props interface) 这个是标准的传入组件配置对象的接口, 和vue2一致
+// return type is for Vetur and TSX support 返回类型为了支持tsx和vetur
 export function createComponent<
   Props,
   RawBindings,
@@ -59,7 +60,7 @@ export function createComponent<
 
 // overload 3: object format with array props declaration
 // props inferred as { [key in PropNames]?: any }
-// return type is for Vetur and TSX support
+// return type is for Vetur and TSX support 用户定义的props是字符串数组的情况
 export function createComponent<
   PropNames extends string,
   RawBindings,

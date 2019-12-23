@@ -1,6 +1,9 @@
 import { ErrorCodes, callWithErrorHandling } from './errorHandling'
 import { isArray } from '@vue/shared'
 
+/**
+ * 调度中心, 处理依赖追踪回调
+ */
 const queue: Function[] = []
 const postFlushCbs: Function[] = []
 const p = Promise.resolve()
@@ -15,13 +18,14 @@ export function nextTick(fn?: () => void): Promise<void> {
   return fn ? p.then(fn) : p
 }
 
+// 加入一个调度事件后, 会刷新job queue, 通过promise.thrn放在下个事件循环里执行
 export function queueJob(job: () => void) {
   if (!queue.includes(job)) {
     queue.push(job)
     queueFlush()
   }
 }
-
+// suspense里用到, 区分普通的job, 在watch等job之后执行
 export function queuePostFlushCb(cb: Function | Function[]) {
   if (!isArray(cb)) {
     postFlushCbs.push(cb)
@@ -34,12 +38,14 @@ export function queuePostFlushCb(cb: Function | Function[]) {
 function queueFlush() {
   if (!isFlushing && !isFlushPending) {
     isFlushPending = true
-    nextTick(flushJobs)
+    nextTick(flushJobs) // 异步, .then生成一个微任务, 在下个事件循序执行,
   }
 }
 
+// 去重
 const dedupe = (cbs: Function[]): Function[] => [...new Set(cbs)]
 
+// 刷新postFlushCbs
 export function flushPostFlushCbs(seen?: CountMap) {
   if (postFlushCbs.length) {
     const cbs = dedupe(postFlushCbs)

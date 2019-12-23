@@ -32,6 +32,17 @@ import { currentRenderingInstance } from './componentRenderUtils'
 
 export type Data = { [key: string]: unknown }
 
+/**
+ * vue的函数组件
+ * 传入props, setup-context, 返回vnode
+ * 自身属性:
+ *    props: 组件的props配置,和vue2一致
+ *    inheritAttrs: 是否继承原始的attrs
+ *    displayName: 组件的名字
+ * 内部使用的hmr标记
+ *    __hmrId
+ *    __hmrUpdated
+ */
 export interface FunctionalComponent<P = {}> {
   (props: P, ctx: SetupContext): VNodeChild
   props?: ComponentPropsOptions<P>
@@ -77,6 +88,7 @@ export type RenderFunction = {
   isRuntimeCompiled?: boolean
 }
 
+// 组件内部实例
 export interface ComponentInternalInstance {
   type: FunctionalComponent | ComponentOptions
   parent: ComponentInternalInstance | null
@@ -146,6 +158,7 @@ export interface ComponentInternalInstance {
 
 const emptyAppContext = createAppContext()
 
+// 生成组件实例
 export function createComponentInstance(
   vnode: VNode,
   parent: ComponentInternalInstance | null
@@ -253,6 +266,7 @@ export function validateComponentName(name: string, config: AppConfig) {
   }
 }
 
+// 启动有状态组件
 export function setupStatefulComponent(
   instance: ComponentInternalInstance,
   parentSuspense: SuspenseBoundary | null
@@ -277,14 +291,20 @@ export function setupStatefulComponent(
     }
   }
   // 0. create render proxy property access cache
+  // 添加访问缓存, 用于在render时快速访问
   instance.accessCache = {}
   // 1. create public instance / render proxy
+  // 开启代理, 代理内部组件实例
   instance.proxy = new Proxy(instance, PublicInstanceProxyHandlers)
   // 2. create props proxy
   // the propsProxy is a reactive AND readonly proxy to the actual props.
   // it will be updated in resolveProps() on updates before render
+  // 开启props代理, this.$props访问的就是这个代理对象, 只读
   const propsProxy = (instance.propsProxy = shallowReadonly(instance.props))
-  // 3. call setup()
+  // 3. call setup() 在这里设置data, method, hooks相关, 这个函数由compiler生成
+  // ysy 在vue3中, 这里的setup函数就是组件的类, 在apiCreateComponent.ts中做包裹
+  // 启动后setupResult就是我们定义的组件实例, 然后在handleSetupResult会赋值给renderContext
+  // 在vue2中, 在finishComponentSetup做兼容
   const { setup } = Component
   if (setup) {
     const setupContext = (instance.setupContext =
@@ -325,10 +345,10 @@ export function handleSetupResult(
   setupResult: unknown,
   parentSuspense: SuspenseBoundary | null
 ) {
-  if (isFunction(setupResult)) {
+  if (isFunction(setupResult)) { // setup返回函数就作为render函数
     // setup returned an inline render function
     instance.render = setupResult as RenderFunction
-  } else if (isObject(setupResult)) {
+  } else if (isObject(setupResult)) { // 返回对象就作为renderContext
     if (__DEV__ && isVNode(setupResult)) {
       warn(
         `setup() should not return VNodes directly - ` +
@@ -365,9 +385,10 @@ function finishComponentSetup(
   parentSuspense: SuspenseBoundary | null
 ) {
   const Component = instance.type as ComponentOptions
-  if (!instance.render) {
+  if (!instance.render) { // 如果还没有render函数
     if (__RUNTIME_COMPILE__ && Component.template && !Component.render) {
       // __RUNTIME_COMPILE__ ensures `compile` is provided
+      // 运行时编译
       Component.render = compile!(Component.template, {
         isCustomElement: instance.appContext.config.isCustomElement || NO
       })
@@ -403,7 +424,7 @@ function finishComponentSetup(
     }
   }
 
-  // support for 2.x options
+  // support for 2.x options 兼容2.x
   if (__FEATURE_OPTIONS__) {
     currentInstance = instance
     currentSuspense = parentSuspense

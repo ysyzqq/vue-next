@@ -28,6 +28,7 @@ export function markAttrsAccessed() {
   accessedAttrs = true
 }
 
+// 渲染组价的root, 调用组件的render函数
 export function renderComponentRoot(
   instance: ComponentInternalInstance
 ): VNode {
@@ -48,7 +49,9 @@ export function renderComponentRoot(
     accessedAttrs = false
   }
   try {
-    if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) { 
+      // ysy: 非函数组件, 调用配置的render函数, 如果没有配置,会在renderer.ts的setupStatefulComponent函数中通过配置的template生成
+      // 传入的是组件的代理对象, 即ComponentPublicInstance对象, 有$xx属性, 详情看componentProxy.ts文件
       result = normalizeVNode(instance.render!.call(withProxy || proxy))
     } else {
       // functional
@@ -65,6 +68,7 @@ export function renderComponentRoot(
     }
 
     // attr merging
+    // attr 合并
     if (
       Component.props != null &&
       Component.inheritAttrs !== false &&
@@ -86,6 +90,7 @@ export function renderComponentRoot(
     }
 
     // inherit transition data
+    // 继承transition的数据
     if (vnode.transition != null) {
       if (
         __DEV__ &&
@@ -108,6 +113,7 @@ export function renderComponentRoot(
   return result
 }
 
+// 判断组件是否要跟新
 export function shouldUpdateComponent(
   prevVNode: VNode,
   nextVNode: VNode,

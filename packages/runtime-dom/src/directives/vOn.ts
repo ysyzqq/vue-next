@@ -4,6 +4,7 @@ const systemModifiers = ['ctrl', 'shift', 'alt', 'meta']
 
 type KeyedEvent = KeyboardEvent | MouseEvent | TouchEvent
 
+// 事件属性判断map, 下面是一些事件特殊的指令处理,  比如@click.self
 const modifierGuards: Record<
   string,
   (e: Event, modifiers?: string[]) => void | boolean

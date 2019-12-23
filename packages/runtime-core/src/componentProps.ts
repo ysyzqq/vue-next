@@ -16,17 +16,21 @@ import {
 import { warn } from './warning'
 import { Data, ComponentInternalInstance } from './component'
 
+/**
+ * 下面是一些组件props配置的类型声明
+ */
+// 组件的props配置
 export type ComponentPropsOptions<P = Data> =
   | ComponentObjectPropsOptions<P>
   | string[]
 
 export type ComponentObjectPropsOptions<P = Data> = {
-  [K in keyof P]: Prop<P[K]> | null
+  [K in keyof P]: Prop<P[K]> | null // props可能是配置对象, 也可能是构造函数
 }
 
 export type Prop<T> = PropOptions<T> | PropType<T>
 
-type DefaultFactory<T> = () => T | null | undefined
+type DefaultFactory<T> = () => T | null | undefined // 默认函数
 
 interface PropOptions<T = any> {
   type?: PropType<T> | true | null
@@ -52,6 +56,7 @@ type OptionalKeys<T, MakeDefaultRequired> = Exclude<
   RequiredKeys<T, MakeDefaultRequired>
 >
 
+// ysy 推断类型infer 关键字
 type InferPropType<T> = T extends null
   ? any // null & true would fail to infer
   : T extends { type: null | true }
@@ -91,7 +96,7 @@ type NormalizedPropsOptions = [Record<string, NormalizedProp>, string[]]
 // - for the rest:
 //   - if has declared props: put declared ones in `props`, the rest in `attrs`
 //   - else: everything goes in `props`.
-
+// 解析组件的props
 export function resolveProps(
   instance: ComponentInternalInstance,
   rawProps: Data | null,
@@ -179,11 +184,13 @@ export function resolveProps(
     }
   } else {
     // if component has no declared props, $attrs === $props
+    // 如果组件没有声明props, 那么$attrs就等于$props
     attrs = props
   }
 
   // in case of dynamic props, check if we need to delete keys from
   // the props proxy
+  // 处理动态属性
   const { patchFlag } = instance.vnode
   if (
     propsProxy !== null &&
@@ -264,6 +271,7 @@ function normalizePropsOptions(
 
 // use function string name to check type constructors
 // so that it works across vms / iframes.
+// ysy使用正则匹配funciton.toString()来获取类型
 function getType(ctor: Prop<any>): string {
   const match = ctor && ctor.toString().match(/^\s*function (\w+)/)
   return match ? match[1] : ''

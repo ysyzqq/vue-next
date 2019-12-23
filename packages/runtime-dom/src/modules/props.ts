@@ -5,11 +5,13 @@ export function patchDOMProp(
   // the following args are passed only due to potential innerHTML/textContent
   // overriding existing VNodes, in which case the old tree must be properly
   // unmounted.
+  // 下面这几个参数是为了判断潜在的innerhtml覆盖了已经存在的vnode, 这种情况下要保证旧的vnode合理的卸载
   prevChildren: any,
   parentComponent: any,
   parentSuspense: any,
   unmountChildren: any
 ) {
+  // 设置innerHTML或textContent的情况, 要将之前的vnode.children卸载
   if ((key === 'innerHTML' || key === 'textContent') && prevChildren != null) {
     unmountChildren(prevChildren, parentComponent, parentSuspense)
     el[key] = value == null ? '' : value
@@ -24,6 +26,7 @@ export function patchDOMProp(
   }
   if (value === '' && typeof el[key] === 'boolean') {
     // e.g. <select multiple> compiles to { multiple: '' }
+    // 属性不赋值为true的处理
     el[key] = true
   } else {
     el[key] = value == null ? '' : value

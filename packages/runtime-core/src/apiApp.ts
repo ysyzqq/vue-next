@@ -8,17 +8,18 @@ import { isFunction, NO, isObject } from '@vue/shared'
 import { warn } from './warning'
 import { createVNode } from './vnode'
 
+// vue3 new Vue()实例的类型
 export interface App<HostElement = any> {
-  config: AppConfig
-  use(plugin: Plugin, options?: any): this
-  mixin(mixin: ComponentOptions): this
-  component(name: string): Component | undefined
-  component(name: string, component: Component): this
+  config: AppConfig // app配置, 配置devtool之类的
+  use(plugin: Plugin, options?: any): this // 插件系统, 传入vue的实例,
+  mixin(mixin: ComponentOptions): this // mixin 传入的是组件的配置项
+  component(name: string): Component | undefined // 传入组件名返回这个组件的实例
+  component(name: string, component: Component): this // 配置一个全局组件
   directive(name: string): Directive | undefined
   directive(name: string, directive: Directive): this
   mount(
-    rootComponent: Component,
-    rootContainer: HostElement | string,
+    rootComponent: Component, // app组件
+    rootContainer: HostElement | string, // 抽象了一层renderer, 这里可以是除了dom之外的其他renderer对象
     rootProps?: Data
   ): ComponentPublicInstance
   provide<T>(key: InjectionKey<T> | string, value: T): this
@@ -73,7 +74,7 @@ export function createAppContext(): AppContext {
     provides: {}
   }
 }
-
+// 传入render函数, 返回vue(app)实例
 export function createAppAPI<HostNode, HostElement>(
   render: RootRenderFunction<HostNode, HostElement>
 ): () => App<HostElement> {

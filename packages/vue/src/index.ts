@@ -33,7 +33,7 @@ function compileToFunction(
     }
     template = el ? el.innerHTML : ``
   }
-
+  // vue的compiler先不涉及, 因为之前看过angular的ivy, 类似的模板编译器,
   const { code } = compile(template, {
     hoistStatic: true,
     cacheHandlers: true,

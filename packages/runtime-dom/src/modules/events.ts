@@ -21,6 +21,7 @@ type EventValueWithOptions = {
 }
 
 // Async edge case fix requires storing an event listener's attach timestamp.
+// 存储事件的timestamp
 let _getNow: () => number = Date.now
 
 // Determine what event timestamp the browser is using. Annoyingly, the
@@ -39,6 +40,7 @@ if (
 
 // To avoid the overhead of repeatedly calling performance.now(), we cache
 // and use the same timestamp for all event listeners attached in the same tick.
+// 为了避免在一次事件循环里重复调用performance.now(), 做缓存处理
 let cachedNow: number = 0
 const p = Promise.resolve()
 const reset = () => {
@@ -64,10 +66,11 @@ export function removeEventListener(
   el.removeEventListener(event, handler, options)
 }
 
+// 事件处理
 export function patchEvent(
   el: Element,
   name: string,
-  prevValue: EventValueWithOptions | EventValue | null,
+  prevValue: EventValueWithOptions | EventValue | null, // 额外的事件处理类型(EventValueWithOptions: 传入事件cb和配置)
   nextValue: EventValueWithOptions | EventValue | null,
   instance: ComponentInternalInstance | null = null
 ) {
@@ -116,6 +119,7 @@ export function patchEvent(
   }
 }
 
+// 将传入的事件回调wrap一下
 function createInvoker(
   initialValue: EventValue,
   instance: ComponentInternalInstance | null
@@ -127,7 +131,7 @@ function createInvoker(
     // the solution is simple: we save the timestamp when a handler is attached,
     // and the handler would only fire if the event passed to it was fired
     // AFTER it was attached.
-    if (e.timeStamp >= invoker.lastUpdated - 1) {
+    if (e.timeStamp >= invoker.lastUpdated - 1) { // 事件在添加事件处理后触发才调用
       callWithAsyncErrorHandling(
         invoker.value,
         instance,

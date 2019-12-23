@@ -54,6 +54,7 @@ export const ErrorTypeStrings: Record<number | string, string> = {
 
 export type ErrorTypes = LifecycleHooks | ErrorCodes
 
+// 下面是各种错误处理函数
 export function callWithErrorHandling(
   fn: Function,
   instance: ComponentInternalInstance | null,
@@ -102,7 +103,7 @@ export function handleError(
     const exposedInstance = instance.proxy
     // in production the hook receives only the error code
     const errorInfo = __DEV__ ? ErrorTypeStrings[type] : type
-    while (cur) {
+    while (cur) { // 循环调用父instance的error catch函数,如果有的的话
       const errorCapturedHooks = cur.ec
       if (errorCapturedHooks !== null) {
         for (let i = 0; i < errorCapturedHooks.length; i++) {

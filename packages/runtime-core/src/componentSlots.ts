@@ -53,7 +53,7 @@ export function resolveSlots(
       slots = {}
       for (const key in rawSlots) {
         if (key === '$stable') continue
-        const value = rawSlots[key]
+        const value = rawSlots[key]  // slots的value是一个函数, 如果设置值的话, 这里会做标准化, 标准化后的格式为 key: () => VNode[]
         if (isFunction(value)) {
           slots[key] = normalizeSlot(key, value)
         } else if (value != null) {
@@ -77,7 +77,7 @@ export function resolveSlots(
       )
     }
     const normalized = normalizeSlotValue(children)
-    slots = { default: () => normalized }
+    slots = { default: () => normalized } // slots的default可以设置函数
   }
   instance.slots = slots || EMPTY_OBJ
 }

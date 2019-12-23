@@ -42,6 +42,7 @@ import { Directive } from './directives'
 import { ComponentPublicInstance } from './componentProxy'
 import { warn } from './warning'
 
+// 组件配置相关
 export interface ComponentOptionsBase<
   Props,
   RawBindings,
@@ -73,6 +74,7 @@ export interface ComponentOptionsBase<
 
   // type-only differentiator to separate OptionWithoutProps from a constructor
   // type returned by createComponent() or FunctionalComponent
+  // 函数组件和createComponent返回的构造函数类型
   call?: never
   // type-only differentiators for built-in Vnode types
   __isFragment?: never
@@ -80,6 +82,7 @@ export interface ComponentOptionsBase<
   __isSuspense?: never
 }
 
+// 无props配置类型
 export type ComponentOptionsWithoutProps<
   Props = {},
   RawBindings = {},
@@ -120,6 +123,7 @@ export type ComponentOptions =
 // TODO legacy component definition also supports constructors with .options
 type LegacyComponent = ComponentOptions
 
+// compute配置, 可以只配置getter, 写可以setter,getter都配置
 export type ComputedOptions = Record<
   string,
   ComputedGetter<any> | WritableComputedOptions<any>
@@ -210,6 +214,7 @@ function createDuplicateChecker() {
   }
 }
 
+// 合并组件配置到组件实例
 export function applyOptions(
   instance: ComponentInternalInstance,
   options: ComponentOptions,
@@ -218,7 +223,7 @@ export function applyOptions(
   const renderContext =
     instance.renderContext === EMPTY_OBJ
       ? (instance.renderContext = reactive({}))
-      : instance.renderContext
+      : instance.renderContext; // 实例的renderContext是一个响应式对象
   const ctx = instance.proxy!
   const {
     // composition
@@ -275,7 +280,7 @@ export function applyOptions(
 
   // state options
   if (dataOptions) {
-    const data = isFunction(dataOptions) ? dataOptions.call(ctx) : dataOptions
+    const data = isFunction(dataOptions) ? dataOptions.call(ctx) : dataOptions; // data函数绑定的this是实例的代理对象
     if (!isObject(data)) {
       __DEV__ && warn(`data() should return an object.`)
     } else if (instance.data === EMPTY_OBJ) {
@@ -284,7 +289,7 @@ export function applyOptions(
           checkDuplicateProperties!(OptionTypes.DATA, key)
         }
       }
-      instance.data = reactive(data)
+      instance.data = reactive(data); // data是一个reactive
     } else {
       // existing data: this is a mixin or extends.
       extend(instance.data, data)
@@ -297,7 +302,7 @@ export function applyOptions(
       __DEV__ && checkDuplicateProperties!(OptionTypes.COMPUTED, key)
 
       if (isFunction(opt)) {
-        renderContext[key] = computed(opt.bind(ctx))
+        renderContext[key] = computed(opt.bind(ctx)) // 计算属性的绑定, 绑定到renderContext上
       } else {
         const { get, set } = opt
         if (isFunction(get)) {
@@ -325,7 +330,7 @@ export function applyOptions(
       const methodHandler = (methods as MethodOptions)[key]
       if (isFunction(methodHandler)) {
         __DEV__ && checkDuplicateProperties!(OptionTypes.METHODS, key)
-        renderContext[key] = methodHandler.bind(ctx)
+        renderContext[key] = methodHandler.bind(ctx) // method也绑定在renderContext上
       } else if (__DEV__) {
         warn(
           `Method "${key}" has type "${typeof methodHandler}" in the component definition. ` +
@@ -359,7 +364,7 @@ export function applyOptions(
         __DEV__ && checkDuplicateProperties!(OptionTypes.INJECT, key)
         const opt = injectOptions[key]
         if (isObject(opt)) {
-          renderContext[key] = inject(opt.from, opt.default)
+          renderContext[key] = inject(opt.from, opt.default) // inject的属性也在renderContext里
         } else {
           renderContext[key] = inject(opt)
         }
@@ -420,13 +425,13 @@ function callSyncHook(
   ctx: ComponentPublicInstance,
   globalMixins: ComponentOptions[]
 ) {
-  callHookFromMixins(name, globalMixins, ctx)
+  callHookFromMixins(name, globalMixins, ctx) // 先调用全局的mixin
   const baseHook = options.extends && options.extends[name]
   if (baseHook) {
     baseHook.call(ctx)
   }
   const mixins = options.mixins
-  if (mixins) {
+  if (mixins) { // 这俩周期函数会调用mixin里面的
     callHookFromMixins(name, mixins, ctx)
   }
   const selfHook = options[name]
@@ -457,6 +462,7 @@ function applyMixins(
   }
 }
 
+// watch有多种类型
 function createWatcher(
   raw: ComponentWatchOptionItem,
   renderContext: Data,

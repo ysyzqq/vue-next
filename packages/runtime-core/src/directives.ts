@@ -1,6 +1,6 @@
 /**
 Runtime helper for applying directives to a vnode. Example usage:
-
+帮助在vode上调用指令
 const comp = resolveComponent('comp')
 const foo = resolveDirective('foo')
 const bar = resolveDirective('bar')
@@ -104,6 +104,7 @@ export type DirectiveArguments = Array<
   | [Directive, any, string, DirectiveModifiers]
 >
 
+// 在vnode中注入指令, 完善vnode.dirs,
 export function withDirectives<T extends VNode>(
   vnode: T,
   directives: DirectiveArguments

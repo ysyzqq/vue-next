@@ -84,10 +84,11 @@ export type NormalizedChildren<HostNode = any, HostElement = any> =
   | RawSlots
   | null
 
+// VNODE定义
 export interface VNode<HostNode = any, HostElement = any> {
   _isVNode: true
   type: VNodeTypes
-  props: VNodeProps | null
+  props: VNodeProps | null // vnode的props, 主要是ref, key和hooks
   key: string | number | null
   ref: string | Ref | ((ref: object | null) => void) | null
   children: NormalizedChildren<HostNode, HostElement>
@@ -112,14 +113,14 @@ export interface VNode<HostNode = any, HostElement = any> {
 }
 
 // Since v-if and v-for are the two possible ways node structure can dynamically
-// change, once we consider v-if branches and each v-for fragment a block, we
-// can divide a template into nested blocks, and within each block the node
-// structure would be stable. This allows us to skip most children diffing
+// change, once we consider v-if branches and each v-for fragment a block, we 每个v-for片段看成是一个block
+// can divide a template into nested blocks, and within each block the node 在每个block里node结构都是稳定的
+// structure would be stable. This allows us to skip most children diffing 可以跳过很多childer diff
 // and only worry about the dynamic nodes (indicated by patch flags).
 const blockStack: (VNode[] | null)[] = []
 let currentBlock: VNode[] | null = null
 
-// Open a block.
+// Open a block. 在createBlock前调用
 // This must be called before `createBlock`. It cannot be part of `createBlock`
 // because the children of the block are evaluated before `createBlock` itself
 // is called. The generated code typically looks like this:
@@ -164,12 +165,14 @@ export function createBlock(
   dynamicProps?: string[]
 ): VNode {
   // avoid a block with patchFlag tracking itself
+  // 这里要--设置不追踪, 避免在createVNode时添加了自己
   shouldTrack--
   const vnode = createVNode(type, props, children, patchFlag, dynamicProps)
   shouldTrack++
-  // save current block children on the block vnode
+  // save current block children on the block vnode 
+  // block节点的dynamicChildren存储的是动态的节点
   vnode.dynamicChildren = currentBlock || EMPTY_ARR
-  // close block
+  // close block 本次block的添加结束, pop就会将当前的block推出
   blockStack.pop()
   currentBlock = blockStack[blockStack.length - 1] || null
   // a block is always going to be patched, so track it as a child of its
@@ -197,6 +200,7 @@ export function isSameVNodeType(n1: VNode, n2: VNode): boolean {
   return n1.type === n2.type && n1.key === n2.key
 }
 
+// 生成vnode
 export function createVNode(
   type: VNodeTypes,
   props: (Data & VNodeProps) | null = null,
@@ -212,6 +216,7 @@ export function createVNode(
   // class & style normalization.
   if (props !== null) {
     // for reactive or proxy objects, we need to clone it to enable mutation.
+    // 如果props是响应式对象, 浅拷贝一下
     if (isReactive(props) || SetupProxySymbol in props) {
       props = extend({}, props)
     }
@@ -230,6 +235,7 @@ export function createVNode(
   }
 
   // encode the vnode type information into a bitmap
+  // 编码vnode的shapeFlag, 标明vnode是什么, ele?组件
   const shapeFlag = isString(type)
     ? ShapeFlags.ELEMENT
     : __FEATURE_SUSPENSE__ && (type as any).__isSuspense === true
@@ -263,7 +269,7 @@ export function createVNode(
 
   normalizeChildren(vnode, children)
 
-  // presence of a patch flag indicates this node needs patching on updates.
+  // presence of a patch flag indicates this node needs patching on updates. 如果有patchflag说明该node需要跟新
   // component nodes also should always be patched, because even if the
   // component doesn't need to update, it needs to persist the instance on to
   // the next vnode so that it can be properly unmounted later.

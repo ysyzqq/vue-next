@@ -17,6 +17,7 @@ const { render: baseRender, createApp: baseCreateApp } = createRenderer({
 // use explicit type casts here to avoid import() calls in rolled-up d.ts
 export const render = baseRender as RootRenderFunction<Node, Element>
 
+// createapp函数
 export const createApp = (): App<Element> => {
   const app = baseCreateApp()
 
@@ -30,6 +31,7 @@ export const createApp = (): App<Element> => {
   }
 
   const mount = app.mount
+  // 做一下template的处理
   app.mount = (component, container, props): any => {
     if (isString(container)) {
       container = document.querySelector(container)!
@@ -56,6 +58,7 @@ export const createApp = (): App<Element> => {
 }
 
 // DOM-only runtime directive helpers
+// dom专有运行时指令
 export {
   vModelText,
   vModelCheckbox,
@@ -67,6 +70,7 @@ export { withModifiers, withKeys } from './directives/vOn'
 export { vShow } from './directives/vShow'
 
 // DOM-only components
+// dom专有组件
 export { Transition, TransitionProps } from './components/Transition'
 export {
   TransitionGroup,

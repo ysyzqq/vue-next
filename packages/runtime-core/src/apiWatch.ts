@@ -33,7 +33,7 @@ import { queuePostRenderEffect } from './renderer'
 export type WatchHandler<T = any> = (
   value: T,
   oldValue: T,
-  onCleanup: CleanupRegistrator
+  onCleanup: CleanupRegistrator // watch监听的第三个参数, 撤销监听?
 ) => any
 
 export interface WatchOptions {
@@ -100,16 +100,16 @@ function doWatch(
   { lazy, deep, flush, onTrack, onTrigger }: WatchOptions = EMPTY_OBJ
 ): StopHandle {
   const instance = currentInstance
-  const suspense = currentSuspense
+  const suspense = currentSuspense // suspence可能还有额外处理
 
-  let getter: () => any
+  let getter: () => any // 生成watch的getter, 也就是依赖收集的点
   if (isArray(source)) {
     getter = () =>
       source.map(
         s =>
-          isRef(s)
+          isRef(s) // 监听this.**, 是一个响应式的value
             ? s.value
-            : callWithErrorHandling(s, instance, ErrorCodes.WATCH_GETTER)
+            : callWithErrorHandling(s, instance, ErrorCodes.WATCH_GETTER) // 或者自定义的watch函数比如: () => this.data.**
       )
   } else if (isRef(source)) {
     getter = () => source.value
@@ -120,7 +120,7 @@ function doWatch(
   } else {
     // no cb -> simple effect
     getter = () => {
-      if (instance && instance.isUnmounted) {
+      if (instance && instance.isUnmounted) { // 如果实例已经卸载直接返回
         return
       }
       if (cleanup) {
@@ -135,7 +135,7 @@ function doWatch(
     }
   }
 
-  if (deep) {
+  if (deep) { // deep处理
     const baseGetter = getter
     getter = () => traverse(baseGetter())
   }
@@ -147,10 +147,10 @@ function doWatch(
     }
   }
 
-  let oldValue = isArray(source) ? [] : undefined
-  const applyCb = cb
+  let oldValue = isArray(source) ? [] : undefined // 可以监听一组值
+  const applyCb = cb // watch的回调, 放在effect的scheduer里 ,每次set响应后调用
     ? () => {
-        if (instance && instance.isUnmounted) {
+        if (instance && instance.isUnmounted) { // 组件已卸载直接返回
           return
         }
         const newValue = runner()
@@ -162,7 +162,7 @@ function doWatch(
           callWithAsyncErrorHandling(cb, instance, ErrorCodes.WATCH_CALLBACK, [
             newValue,
             oldValue,
-            registerCleanup
+            registerCleanup // watch的第三个参数是清除函数, 调用可以设置一个清除函数, 在停止监听和每次监听回调时调用一次
           ])
           oldValue = newValue
         }
@@ -170,9 +170,9 @@ function doWatch(
     : void 0
 
   let scheduler: (job: () => any) => void
-  if (flush === 'sync') {
+  if (flush === 'sync') { // 同步任务直接调用cb
     scheduler = invoke
-  } else if (flush === 'pre') {
+  } else if (flush === 'pre') { // 在组件前调用
     scheduler = job => {
       if (!instance || instance.vnode.el != null) {
         queueJob(job)
@@ -182,7 +182,7 @@ function doWatch(
         job()
       }
     }
-  } else {
+  } else { // 默认操作, 加入刷新队列, 如果支持suspense, 加入此队列
     scheduler = job => {
       queuePostRenderEffect(job, suspense)
     }
@@ -194,7 +194,7 @@ function doWatch(
     computed: true,
     onTrack,
     onTrigger,
-    scheduler: applyCb ? () => scheduler(applyCb) : scheduler
+    scheduler: applyCb ? () => scheduler(applyCb) : scheduler // 如果没有watch的回调,那么每次scheduler默认传入的是当前的effect, (effect(), 即get依赖收集操作)
   })
 
   if (!lazy) {
@@ -227,7 +227,8 @@ export function instanceWatch(
   return stop
 }
 
-function traverse(value: unknown, seen: Set<unknown> = new Set()) {
+// deep情况下的递归watch
+function traverse(value: unknown, seen: Set<unknown> = new Set()) { // seen缓存去重
   if (!isObject(value) || seen.has(value)) {
     return
   }
@@ -245,9 +246,9 @@ function traverse(value: unknown, seen: Set<unknown> = new Set()) {
     value.forEach(v => {
       traverse(v, seen)
     })
-  } else {
+  } else { // watch该对象的每个key, 每个值都加入到当前effect的deps中track
     for (const key in value) {
-      traverse(value[key], seen)
+      traverse(value[key], seen) // getter时track
     }
   }
   return value

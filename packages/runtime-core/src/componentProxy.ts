@@ -18,6 +18,12 @@ import {
 
 // public properties exposed on the proxy, which is used as the render context
 // in templates (as `this` in the render option)
+/**
+ * 组件公开实例
+ * 公开属性是暴露在代理对象上, readonly?通过代理去访问原始属性
+ * 在模板的render context中使用
+ * jsx中render函数中的this
+ */
 export type ComponentPublicInstance<
   P = {},
   B = {},
@@ -61,7 +67,7 @@ const publicPropertiesMap: Record<
   $root: i => i.root,
   $emit: i => i.emit,
   $options: i => i.type,
-  $forceUpdate: i => () => queueJob(i.update),
+  $forceUpdate: i => () => queueJob(i.update), // 添加一个调度函数
   $nextTick: () => nextTick,
   $watch: i => instanceWatch.bind(i)
 }
@@ -72,6 +78,7 @@ const enum AccessTypes {
   PROPS
 }
 
+// 代理组件内部实例
 export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
   get(target: ComponentInternalInstance, key: string) {
     // fast path for unscopables when using `with` block
@@ -94,6 +101,10 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
     // is the multiple hasOwn() calls. It's much faster to do a simple property
     // access on a plain object, so we use an accessCache object (with null
     // prototype) to memoize what access type a key corresponds to.
+    /**
+     * 访问缓存, 为了避免多次hasown的调用(很耗性能), 将key分三种类型映射, 然后直接从对应的data, renderContext, propsProxy上取
+     * 这里优先处理调用频率比较高的
+     */
     const n = accessCache![key]
     if (n !== undefined) {
       switch (n) {
@@ -112,6 +123,7 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
       return renderContext[key]
     } else if (hasOwn(props, key)) {
       // only cache props access if component has declared (thus stable) props
+      // 浅对比, 只缓存组件声明的props
       if (type.props != null) {
         accessCache![key] = AccessTypes.PROPS
       }
@@ -120,6 +132,7 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
     }
 
     // public $xxx properties & user-attached properties (sink)
+    // 处理以$开头的属性,也通过map去取对应的值(包括用户自己定义的$开头的属性)
     const publicGetter = publicPropertiesMap[key]
     if (publicGetter !== undefined) {
       if (__DEV__ && key === '$attrs') {

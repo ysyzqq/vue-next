@@ -1,6 +1,6 @@
 const doc = document
 const svgNS = 'http://www.w3.org/2000/svg'
-
+// 传给renderer的指定接口, 定义了vnode.el的生成和patch处理的接口
 export const nodeOps = {
   insert: (child: Node, parent: Node, anchor?: Node) => {
     if (anchor != null) {

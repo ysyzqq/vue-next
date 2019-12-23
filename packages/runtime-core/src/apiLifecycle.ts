@@ -22,16 +22,16 @@ export function injectHook(
     const hooks = target[type] || (target[type] = [])
     // cache the error handling wrapper for injected hooks so the same hook
     // can be properly deduped by the scheduler. "__weh" stands for "with error
-    // handling".
+    // handling". 给hook添加warp, 相同的hook函数可以被去重
     const wrappedHook =
       hook.__weh ||
-      (hook.__weh = (...args: unknown[]) => {
+      (hook.__weh = (...args: unknown[]) => { // 错误处理函数
         if (target.isUnmounted) {
           return
         }
         // disable tracking inside all lifecycle hooks
-        // since they can potentially be called inside effects.
-        pauseTracking()
+        // since they can potentially be called inside effects. 暂停依赖追踪, 防止错误处理函数中触发了effect
+        pauseTracking() 
         // Set currentInstance during hook invocation.
         // This assumes the hook does not synchronously trigger other hooks, which
         // can only be false when the user does something really funky.

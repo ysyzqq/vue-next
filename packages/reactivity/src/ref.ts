@@ -30,7 +30,7 @@ export function isRef(r: any): r is Ref {
 export function ref<T extends Ref>(raw: T): T
 export function ref<T>(raw: T): Ref<T>
 export function ref<T = any>(): Ref<T>
-export function ref(raw?: unknown) {
+export function ref(raw?: unknown) { // ref对象的值都是通过ref.value去访问
   if (isRef(raw)) {
     return raw
   }

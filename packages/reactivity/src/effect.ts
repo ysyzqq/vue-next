@@ -122,7 +122,7 @@ export function resumeTracking() {
   shouldTrack = true
 }
 
-export function track(target: object, type: TrackOpTypes, key: unknown) {
+export function track(target: object, type: TrackOpTypes, key: unknown) { // 依赖收集
   if (!shouldTrack || effectStack.length === 0) {
     return
   }
@@ -149,7 +149,7 @@ export function track(target: object, type: TrackOpTypes, key: unknown) {
   }
 }
 
-export function trigger(
+export function trigger( // 依赖触发
   target: object,
   type: TriggerOpTypes,
   key?: unknown,

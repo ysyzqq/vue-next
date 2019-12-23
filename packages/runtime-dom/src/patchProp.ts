@@ -10,6 +10,7 @@ import {
   VNode
 } from '@vue/runtime-core'
 
+// dom属性,事件的patch处理
 export function patchProp(
   el: Element,
   key: string,
@@ -34,7 +35,7 @@ export function patchProp(
       // Do nothing. This is handled by v-model directives.
       break
     default:
-      if (isOn(key)) {
+      if (isOn(key)) { // on走事件处理
         patchEvent(
           el,
           key.slice(2).toLowerCase(),
@@ -42,7 +43,7 @@ export function patchProp(
           nextValue,
           parentComponent
         )
-      } else if (!isSVG && key in el) {
+      } else if (!isSVG && key in el) { // domprop处理
         patchDOMProp(
           el,
           key,
@@ -52,7 +53,7 @@ export function patchProp(
           parentSuspense,
           unmountChildren
         )
-      } else {
+      } else { // 其他走attr处理
         // special case for <input v-model type="checkbox"> with
         // :true-value & :false-value
         // store value as dom properties since non-string values will be
