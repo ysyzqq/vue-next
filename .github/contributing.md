@@ -68,12 +68,31 @@ yarn build runtime-core
 yarn build runtime --all
 ```
 
+#### Build Formats
+
 By default, each package will be built in multiple distribution formats as specified in the `buildOptions.formats` field in its `package.json`. These can be overwritten via the `-f` flag. The following formats are supported:
 
-- **`global`**: for direct use via `<script>` in the browser. The global variable exposed is specified via the `buildOptions.name` field in a package's `package.json`.
-- **`esm-bundler`**: for use with bundlers like `webpack`, `rollup` and `parcel`.
-- **`esm`**: for usage via native ES modules imports (in browser via `<script type="module">`, or via Node.js native ES modules support in the future)
-- **`cjs`**: for use in Node.js via `require()`.
+- **`global`**:
+  - For direct use via `<script>` in the browser. The global variable exposed is specified via the `buildOptions.name` field in a package's `package.json`.
+  - Note: global builds are not [UMD](https://github.com/umdjs/umd) builds. Instead they are built as [IIFEs](https://developer.mozilla.org/en-US/docs/Glossary/IIFE).
+
+- **`esm-bundler`**:
+  - Leaves prod/dev branches with `process.env.NODE_ENV` guards (to be replaced by bundler)
+  - Does not ship a minified build (to be done together with the rest of the code after bundling)
+  - For use with bundlers like `webpack`, `rollup` and `parcel`.
+  - Imports dependencies (e.g. `@vue/runtime-core`, `@vue/runtime-compiler`)
+    - Imported dependencies are also `esm-bundler` builds and will in turn import their dependencies (e.g. `@vue/runtime-core` imports `@vue/reactivity`)
+    - This means you **can** install/import these deps without ending up with different instances of these dependencies
+
+- **`esm`**:
+  - For usage via native ES modules imports (in browser via `<script type="module">`, or via Node.js native ES modules support in the future)
+  - Inlines all dependencies - i.e. it's a single ES module with no imports from other files
+    - This means you **must** import everything from this file and this file only to ensure you are getting the same instance of code.
+  - Hard-coded prod/dev branches, and the prod build is pre-minified (you will have to use different paths/aliases for dev/prod)
+
+- **`cjs`**:
+  - For use in Node.js server-side rendering via `require()`.
+  - The dev/prod files are pre-built, but are dynamically required based on `process.env.NODE_ENV` in `index.js`, which is the default entry when you do `require('vue')`.
 
 For example, to build `runtime-core` with the global build only:
 
@@ -93,7 +112,7 @@ The `--types` flag will generate type declarations during the build and in addit
 
 - Roll the declarations into a single `.dts` file for each package;
 - Generate an API report in `<projectRoot>/temp/<packageName>.api.md`. This report contains potential warnings emitted by [api-extractor](https://api-extractor.com/).
-- Generate an API model json in `<projectRoot>/temp/<packageName>.api.md`. This file can be used to generate a Markdown version of the exported APIs.
+- Generate an API model json in `<projectRoot>/temp/<packageName>.api.json`. This file can be used to generate a Markdown version of the exported APIs.
 
 ### `yarn dev`
 
@@ -168,7 +187,7 @@ import { h } from '@vue/runtime-core'
 This is made possible via several configurations:
 
 - For TypeScript, `compilerOptions.path` in `tsconfig.json`
-- For Jest, `moduleNameMapping` in `jest.config.js`
+- For Jest, `moduleNameMapper` in `jest.config.js`
 - For plain Node.js, they are linked using [Yarn Workspaces](https://yarnpkg.com/blog/2017/08/02/introducing-workspaces/).
 
 ### Package Dependencies

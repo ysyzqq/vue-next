@@ -10,16 +10,23 @@ import { createVNode, cloneVNode } from './vnode'
 
 // vue3 new Vue()实例的类型
 export interface App<HostElement = any> {
-  config: AppConfig // app配置, 配置devtool之类的
-  use(plugin: Plugin, options?: any): this // 插件系统, 传入vue的实例,
-  mixin(mixin: ComponentOptions): this // mixin 传入的是组件的配置项
-  component(name: string): Component | undefined // 传入组件名返回这个组件的实例
-  component(name: string, component: Component): this // 配置一个全局组件
+  // app配置, 配置devtool之类的
+  config: AppConfig
+  // 插件系统, 传入vue的实例,
+  use(plugin: Plugin, ...options: any[]): this
+  // mixin 传入的是组件的配置项
+  mixin(mixin: ComponentOptions): this
+  component(name: string): Component | undefined
+  component(name: string, component: Component): this
   directive(name: string): Directive | undefined
   directive(name: string, directive: Directive): this
+  // 抽象了一层renderer, 这里可以是除了dom之外的其他renderer对象
   mount(
-    rootComponent: Component, // app组件
-    rootContainer: HostElement | string, // 抽象了一层renderer, 这里可以是除了dom之外的其他renderer对象
+    rootComponent:
+      | Component
+      // for compatibility with defineComponent() return types
+      | { new (): ComponentPublicInstance<any, any, any, any, any> },
+    rootContainer: HostElement | string,
     rootProps?: Data
   ): ComponentPublicInstance
   provide<T>(key: InjectionKey<T> | string, value: T): this
@@ -51,10 +58,10 @@ export interface AppContext {
   reload?: () => void // HMR only
 }
 
-type PluginInstallFunction = (app: App) => any
+type PluginInstallFunction = (app: App, ...options: any[]) => any
 
 export type Plugin =
-  | PluginInstallFunction
+  | PluginInstallFunction & { install?: PluginInstallFunction }
   | {
       install: PluginInstallFunction
     }
@@ -98,15 +105,15 @@ export function createAppAPI<HostNode, HostElement>(
         }
       },
 
-      use(plugin: Plugin) {
+      use(plugin: Plugin, ...options: any[]) {
         if (installedPlugins.has(plugin)) {
           __DEV__ && warn(`Plugin has already been applied to target app.`)
-        } else if (isFunction(plugin)) {
-          installedPlugins.add(plugin)
-          plugin(app)
         } else if (plugin && isFunction(plugin.install)) {
           installedPlugins.add(plugin)
-          plugin.install(app)
+          plugin.install(app, ...options)
+        } else if (isFunction(plugin)) {
+          installedPlugins.add(plugin)
+          plugin(app, ...options)
         } else if (__DEV__) {
           warn(
             `A plugin must either be a function or an object with an "install" ` +
