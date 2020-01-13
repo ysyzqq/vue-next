@@ -293,8 +293,8 @@ export function setupStatefulComponent(
   // 开启props代理, this.$props访问的就是这个代理对象, 只读
   const propsProxy = (instance.propsProxy = shallowReadonly(instance.props))
   // 3. call setup() 在这里设置data, method, hooks相关, 这个函数由compiler生成
-  // ysy 在vue3中, 这里的setup函数就是组件的类, 在apiCreateComponent.ts中做包裹
-  // 启动后setupResult就是我们定义的组件实例, 然后在handleSetupResult会赋值给renderContext
+  // ysy 在vue3中, 这里的setup函数返回render函数, 在apiCreateComponent.ts中做包裹
+  // 启动后setupResult就是render, 赋值给instance.render 然后在handleSetupResult会赋值给renderContext
   // 在vue2中, 在finishComponentSetup做兼容
   const { setup } = Component
   if (setup) {
@@ -356,6 +356,7 @@ export function handleSetupResult(
       }`
     )
   }
+  // 这里完成组件data的初始化,并兼任2.x
   finishComponentSetup(instance, parentSuspense)
 }
 

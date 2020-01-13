@@ -99,7 +99,7 @@ export interface VNode<HostNode = any, HostElement = any> {
   dirs: DirectiveBinding[] | null
   transition: TransitionHooks | null
 
-  // DOM
+  // DOM 对应不同vnode类型挂载的dom节点key
   el: HostNode | null
   anchor: HostNode | null // fragment anchor
   target: HostElement | null // portal target
@@ -342,6 +342,7 @@ export function createCommentVNode(
     : createVNode(Comment, null, text)
 }
 
+// 标准化render函数返回的vnode
 export function normalizeVNode<T, U>(child: VNodeChild<T, U>): VNode<T, U> {
   if (child == null) {
     // empty placeholder
@@ -370,9 +371,9 @@ export function normalizeChildren(vnode: VNode, children: unknown) {
     children = null
   } else if (isArray(children)) {
     type = ShapeFlags.ARRAY_CHILDREN
-  } else if (typeof children === 'object') {
+  } else if (typeof children === 'object') { // 生成vnode时传入对象形式的slots
     type = ShapeFlags.SLOTS_CHILDREN
-  } else if (isFunction(children)) {
+  } else if (isFunction(children)) { // 函数形式作为单一default的slot处理
     children = { default: children }
     type = ShapeFlags.SLOTS_CHILDREN
   } else {
